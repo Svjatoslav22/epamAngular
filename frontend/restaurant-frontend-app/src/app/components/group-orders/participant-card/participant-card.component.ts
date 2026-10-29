@@ -24,3 +24,4 @@ export class ParticipantCardComponent {
     return person.type === 'Owner' ? `Owner: ${person.name}` : `Guest: ${person.name}`;
   });
 }
+
