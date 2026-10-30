@@ -5,6 +5,7 @@ import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { tokenInterceptor } from './auth/token.interceptor';
 import { groupOrdersMockInterceptor } from './shared/mocks/group-orders/group-orders-mock.interceptor';
+import { publicMockInterceptor } from './shared/mocks/public-mock.interceptor';
 import { applyDemoLoginFromUrl } from './shared/mocks/auth/demo-auth';
 import { provideDaterangepickerLocale } from 'ngx-daterangepicker-bootstrap';
 
@@ -21,8 +22,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withXhr(),
-      // Мок групового pre-order для demo-reservation (домашка).
-      withInterceptors([tokenInterceptor, groupOrdersMockInterceptor]),
+      // Мок групового pre-order та публічних сторінок (меню, локації) без бекенду
+      withInterceptors([tokenInterceptor, groupOrdersMockInterceptor, publicMockInterceptor]),
     ),
     provideDaterangepickerLocale({
       separator: ' - ',
