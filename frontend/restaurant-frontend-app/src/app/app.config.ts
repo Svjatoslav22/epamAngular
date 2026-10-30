@@ -13,16 +13,16 @@ import { API_BASE_URL } from './shared/config/api-base-url.token';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    // DEV-ONLY: ?demo у будь-якій адресі — мок-логін як Owner демо-бронювання (домашка, рівні 1–2).
+    // ?demo у будь-якій адресі — мок-логін як Owner демо-бронювання (домашка).
     provideAppInitializer(() => {
-      if (isDevMode()) applyDemoLoginFromUrl();
+      applyDemoLoginFromUrl();
     }),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(
       withXhr(),
-      // DEV-ONLY: мок групового pre-order для demo-reservation (домашка). У production не реєструється.
-      withInterceptors([tokenInterceptor, ...(isDevMode() ? [groupOrdersMockInterceptor] : [])]),
+      // Мок групового pre-order для demo-reservation (домашка).
+      withInterceptors([tokenInterceptor, groupOrdersMockInterceptor]),
     ),
     provideDaterangepickerLocale({
       separator: ' - ',
