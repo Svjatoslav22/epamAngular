@@ -145,6 +145,86 @@ export const publicMockInterceptor: HttpInterceptorFn = (req, next) => {
     ]);
   }
 
+  // 7. GET /feedback
+  if (req.method === 'GET' && url.endsWith('/feedback')) {
+    const locId = req.params.get('locationId') || 'demo-location-2';
+    const type = req.params.get('type') || 'Service';
+    return send({
+      items: [
+        {
+          userId: 'mock-user-1',
+          locationId: locId,
+          reservationId: 'mock-res-1',
+          username: 'Anna Kowalska',
+          rating: 5,
+          comment: 'Wonderful atmosphere and delicious organic dishes! Loved the seasonal menu.',
+          createdAt: '2026-10-25T14:30:00.000Z',
+          type,
+        },
+        {
+          userId: 'mock-user-2',
+          locationId: locId,
+          reservationId: 'mock-res-2',
+          username: 'Mark Miller',
+          rating: 5,
+          comment: 'Very cozy place. Service was quick and attentive. Will definitely come back.',
+          createdAt: '2026-10-22T11:15:00.000Z',
+          type,
+        },
+      ],
+      totalPages: 1,
+      currentPage: 1,
+    });
+  }
+
+  // 8. GET /users/:id/profile-image
+  if (req.method === 'GET' && url.includes('/users/') && url.endsWith('/profile-image')) {
+    return send({ presignedUrl: 'assets/img/avatar.png' });
+  }
+
+  // 9. GET /users/:id/name
+  if (req.method === 'GET' && url.includes('/users/') && url.endsWith('/name')) {
+    return send({ name: 'Guest User' });
+  }
+
+  // 10. GET /me
+  if (req.method === 'GET' && url.endsWith('/me')) {
+    try {
+      const storedUser = localStorage.getItem('user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      if (user) return send(user);
+    } catch {
+      // fallback
+    }
+    return send({
+      id: 'demo-owner',
+      firstName: 'Yevhenii',
+      lastName: 'Demo',
+      email: 'owner@demo.test',
+      role: 'Customer',
+    });
+  }
+
+  // 11. PUT /me
+  if (req.method === 'PUT' && url.endsWith('/me')) {
+    return send({ message: 'Profile updated' });
+  }
+
+  // 12. GET /reservations
+  if (req.method === 'GET' && url.endsWith('/reservations')) {
+    return send([]);
+  }
+
+  // 13. POST /feedback
+  if (req.method === 'POST' && url.endsWith('/feedback')) {
+    return send({ success: true });
+  }
+
+  // 14. GET /reservations/:id/feedback
+  if (req.method === 'GET' && url.includes('/reservations/') && url.endsWith('/feedback')) {
+    return send({ service: null, cuisineExperience: null });
+  }
+
   return next(req);
 };
 

@@ -6,6 +6,9 @@ import { UserModel } from '../models/user.model';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { Tokens } from '../models/tokens.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
+import { Roles } from '@app/shared/constants/roles';
+import { createDemoTokens, DEMO_USER } from '@app/shared/mocks/auth/demo-auth';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -17,23 +20,64 @@ export class AuthenticationService {
   public isAuthorised$: Observable<boolean> = this.isAuthorised$$.asObservable();
   public jwtHelperService = new JwtHelperService();
   private readonly http = inject(HttpClient);
-  
+
+  private isMockEnvironment(): boolean {
+    return (
+      !this.baseUrl ||
+      !this.baseUrl.startsWith('http') ||
+      this.baseUrl.includes('example.com') ||
+      this.baseUrl.includes('YOUR-API-ID')
+    );
+  }
+
   async signIn(email: string, password: string): Promise<LoginResult> {
+    if (this.isMockEnvironment()) {
+      return this.mockSignIn(email);
+    }
+
     const body = {
       email: email,
       password: password,
     };
     const url = this.baseUrl + '/signin';
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    return await this.resolveLoginReponse(response);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      return await this.resolveLoginReponse(response);
+    } catch (error) {
+      console.warn('Backend unavailable, falling back to mock sign in:', error);
+      return this.mockSignIn(email);
+    }
   }
+
+  private mockSignIn(email: string): LoginResult {
+    const saved = localStorage.getItem('demo_registered_user');
+    let user: UserModel;
+    if (saved) {
+      try {
+        user = JSON.parse(saved);
+        if (email) user.email = email;
+      } catch {
+        user = { ...DEMO_USER, email: email || DEMO_USER.email };
+      }
+    } else {
+      user = { ...DEMO_USER, email: email || DEMO_USER.email };
+    }
+
+    const tokens = createDemoTokens();
+    localStorage.setItem('auth', JSON.stringify(tokens));
+    localStorage.setItem('user', JSON.stringify(user));
+    this.isAuthorised$$.next(true);
+    this.user$$.next(user);
+    return { success: true };
+  }
+
   getToken(): string | undefined {
     const authData = localStorage.getItem('auth');
     let parsed;
@@ -44,13 +88,18 @@ export class AuthenticationService {
     }
     return idToken;
   }
+
   async register(
     firstName: string,
     lastName: string,
     email: string,
     password: string,
     confirmPassword: string
-  ) {
+  ): Promise<LoginResult> {
+    if (this.isMockEnvironment()) {
+      return this.mockRegister(firstName, lastName, email);
+    }
+
     const body = {
       firstName: firstName,
       lastName: lastName,
@@ -60,18 +109,37 @@ export class AuthenticationService {
     };
     const url = this.baseUrl + '/register';
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    return await this.resolveRegisterResponse(response);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      return await this.resolveRegisterResponse(response);
+    } catch (error) {
+      console.warn('Backend unavailable, falling back to mock registration:', error);
+      return this.mockRegister(firstName, lastName, email);
+    }
   }
+
+  private mockRegister(firstName: string, lastName: string, email: string): LoginResult {
+    const mockUser: UserModel = {
+      id: 'demo-user-' + Date.now(),
+      firstName: firstName || 'Demo',
+      lastName: lastName || 'User',
+      email: email || 'user@example.com',
+      role: Roles.CUSTOMER,
+    };
+    localStorage.setItem('demo_registered_user', JSON.stringify(mockUser));
+    return { success: true };
+  }
+
   signOut() {
     localStorage.removeItem('auth');
     localStorage.removeItem('user');
+    localStorage.removeItem('demo_registered_user');
     this.user$$.next(null);
     this.isAuthorised$$.next(false);
   }
@@ -134,6 +202,11 @@ export class AuthenticationService {
       this.signOut();
       return;
     }
+    if (this.isMockEnvironment()) {
+      const user = this.getUser() || DEMO_USER;
+      this.user$$.next(user);
+      return;
+    }
     const url = this.baseUrl + '/me';
     this.http.get<UserModel>(url).subscribe(
       (user) => {
@@ -142,7 +215,8 @@ export class AuthenticationService {
       },
       (error) => {
         console.error('Failed to load user data:', error);
-        this.user$$.next(null);
+        const fallback = this.getUser();
+        this.user$$.next(fallback);
       }
     );
   }

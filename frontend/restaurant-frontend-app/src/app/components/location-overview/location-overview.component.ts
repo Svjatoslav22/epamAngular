@@ -4,7 +4,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LocationsService } from '@app/services/locations/locations.service';
 import { ReviewSortLabels, ReviewTypeLabels } from '@app/shared/mappers/review-enum.mapper';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
 import { ReviewType } from '@app/models/enums/review-type.model';
 import { ReviewSort } from '@app/models/enums/review-sort.model';
 import { LocationResponse } from '@app/models/locations/location-response.model';
@@ -16,12 +15,11 @@ import { FeedbackResponseItem } from '@app/models/feedbacks/feedback-response-it
 
 @Component({
   selector: 'app-location-overview',
-  imports: [CommonModule, HttpClientModule, HeaderComponent, RouterLink],
+  imports: [CommonModule, HeaderComponent, RouterLink],
   templateUrl: './location-overview.component.html',
   styleUrl: './location-overview.component.scss',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  providers: [LocationsService],
 })
 export class LocationOverviewComponent implements OnInit {
   readonly maxStars = 5;
